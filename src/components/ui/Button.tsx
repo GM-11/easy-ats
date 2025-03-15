@@ -44,7 +44,7 @@ export const Button = ({
   return (
     <button
       className={twMerge(
-        "font-medium rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background flex items-center justify-center transition-all duration-200",
+        "font-medium rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background flex items-center justify-center transition-all duration-200 active:scale-95",
         variantStyles[variant],
         sizeStyles[size],
         fullWidth ? "w-full" : "",

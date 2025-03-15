@@ -82,7 +82,7 @@ Example format (replace with actual content):
   return PromptTemplate.fromTemplate(templateInstructions);
 };
 
-// Prompt template for optimized resume generation
+// Modify the prompt template to include extracted user data
 export const createResumeOptimizationTemplate = () => {
   const templateInstructions = `
 You are an expert resume writer specializing in optimizing resumes for ATS systems while maintaining integrity and professionalism.
@@ -97,6 +97,13 @@ CURRENT RESUME:
 CANDIDATE SKILLS:
 {skills}
 
+EXTRACTED USER INFORMATION:
+Name: {userName}
+Email: {userEmail}
+Phone: {userPhone}
+Education: {userEducation}
+Experience Highlights: {userExperience}
+
 Please create an optimized version of the resume that:
 1. Incorporates relevant keywords from the job description
 2. Highlights the most relevant experience and skills for this specific position
@@ -104,6 +111,9 @@ Please create an optimized version of the resume that:
 4. Quantifies achievements where possible
 5. Maintains the same basic work history and education but optimizes the presentation
 6. Uses concise, powerful language that will pass through ATS systems
+7. ALWAYS includes the user's actual contact information (name, email, phone) at the top of the resume
+8. Maintains the user's actual education credentials without fabrication
+9. Focuses on the user's most relevant experience that matches the job description
 
 Format the resume professionally, maintaining clear sections for:
 - Summary/Objective (tailored to this specific job)
@@ -189,17 +199,31 @@ export async function analyzeResume(
   }
 }
 
-// Function to generate an optimized resume
+// Modify the function to generate an optimized resume to accept user info
 export async function generateOptimizedResume(
   jobDescription: string,
   resume: string,
-  skills: string
+  skills: string,
+  userInfo?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    education?: string[];
+    experience?: string[];
+  }
 ) {
   try {
     // Truncate inputs to stay within token limits
     const truncatedResume = truncateText(resume, 4000);
     const truncatedJobDescription = truncateText(jobDescription, 3000);
     const truncatedSkills = truncateText(skills, 500);
+
+    // Set default user info if not provided
+    const userName = userInfo?.name || "";
+    const userEmail = userInfo?.email || "";
+    const userPhone = userInfo?.phone || "";
+    const userEducation = userInfo?.education?.join("\n") || "";
+    const userExperience = userInfo?.experience?.join("\n") || "";
 
     const model = getGroqModel();
     const template = createResumeOptimizationTemplate();
@@ -209,6 +233,11 @@ export async function generateOptimizedResume(
       jobDescription: truncatedJobDescription,
       resume: truncatedResume,
       skills: truncatedSkills,
+      userName,
+      userEmail,
+      userPhone,
+      userEducation,
+      userExperience,
     });
 
     const response = await model.invoke(prompt);

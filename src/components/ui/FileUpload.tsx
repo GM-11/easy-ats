@@ -53,16 +53,16 @@ export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
     return (
       <div className={twMerge(fullWidth ? "w-full" : "", className)}>
         {label && (
-          <label className="block text-sm font-medium text-gray-200 mb-1">
+          <label className="block text-sm font-medium text-foreground mb-1">
             {label}
           </label>
         )}
         <div
           onClick={handleClick}
           className={twMerge(
-            "flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors",
-            error ? "border-red-600" : "border-accent/40",
-            fileName ? "bg-secondary/50" : ""
+            "flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 transition-colors",
+            error ? "border-red-500" : "border-gray-300",
+            fileName ? "bg-gray-100" : ""
           )}
         >
           <input
@@ -77,7 +77,7 @@ export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
           {!fileName ? (
             <>
               <svg
-                className="w-8 h-8 mb-2 text-gray-300"
+                className="w-8 h-8 mb-2 text-gray-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -90,11 +90,11 @@ export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
                   d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                 />
               </svg>
-              <p className="mb-1 text-sm text-gray-200">
+              <p className="mb-1 text-sm text-gray-700">
                 <span className="font-semibold">Click to upload</span> or drag
                 and drop
               </p>
-              <p className="text-xs text-gray-300">{helperText}</p>
+              <p className="text-xs text-gray-500">{helperText}</p>
             </>
           ) : (
             <div className="flex items-center justify-between w-full">
@@ -113,7 +113,7 @@ export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                <span className="text-sm font-medium text-gray-200 truncate max-w-[250px]">
+                <span className="text-sm font-medium text-gray-700 truncate max-w-[250px]">
                   {fileName}
                 </span>
               </div>
@@ -130,9 +130,9 @@ export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
           )}
         </div>
         {error ? (
-          <p className="mt-1 text-sm text-red-400">{error}</p>
+          <p className="mt-1 text-sm text-red-600">{error}</p>
         ) : helperText && !fileName ? (
-          <p className="mt-1 text-sm text-gray-300">{helperText}</p>
+          <p className="mt-1 text-sm text-gray-500">{helperText}</p>
         ) : null}
       </div>
     );

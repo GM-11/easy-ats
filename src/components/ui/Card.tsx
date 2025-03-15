@@ -19,23 +19,23 @@ export const Card: React.FC<CardProps> = ({
   return (
     <div
       className={twMerge(
-        "bg-secondary shadow-card rounded-lg overflow-hidden border border-accent/30 hover:shadow-lg transition-shadow duration-300",
+        "bg-background shadow-card rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-transform duration-300 transform",
         className
       )}
     >
       {(title || description) && (
-        <div className="px-6 py-5 border-b border-accent/40 bg-secondary/90">
+        <div className="px-6 py-5 border-b border-gray-200 bg-gray-100">
           {title && (
-            <h3 className="text-lg font-medium text-gray-50">{title}</h3>
+            <h3 className="text-lg font-medium text-foreground">{title}</h3>
           )}
           {description && (
-            <p className="mt-1 text-sm text-gray-300">{description}</p>
+            <p className="mt-1 text-sm text-gray-600">{description}</p>
           )}
         </div>
       )}
       <div className="px-6 py-5">{children}</div>
       {footer && (
-        <div className="px-6 py-4 bg-secondary/90 border-t border-accent/40">
+        <div className="px-6 py-4 bg-gray-100 border-t border-gray-200">
           {footer}
         </div>
       )}

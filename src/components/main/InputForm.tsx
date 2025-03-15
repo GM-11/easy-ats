@@ -69,12 +69,10 @@ export const InputForm: React.FC<InputFormProps> = ({
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-accent/40"></div>
+              <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-secondary px-3 text-gray-300 text-sm">
-                OR
-              </span>
+              <span className="bg-white px-3 text-gray-600 text-sm">OR</span>
             </div>
           </div>
 
@@ -99,10 +97,26 @@ export const InputForm: React.FC<InputFormProps> = ({
           type="submit"
           isLoading={isAnalyzing}
           size="lg"
-          className="font-bold text-lg py-4 px-8"
-          variant="outline"
+          className="font-bold text-lg py-4 px-8 mx-auto mt-6 min-w-48 flex items-center justify-center shadow-lg"
+          variant="primary"
         >
-          Analyze Resume
+          {isAnalyzing ? "Analyzing..." : "Analyze Resume"}
+          {!isAnalyzing && (
+            <svg
+              className="ml-2 h-5 w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M14 5l7 7m0 0l-7 7m7-7H3"
+              />
+            </svg>
+          )}
         </Button>
       </div>
     </form>

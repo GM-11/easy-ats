@@ -25,15 +25,15 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className={fullWidth ? "w-full" : ""}>
         {label && (
-          <label className="block text-sm font-medium text-gray-200 mb-1">
+          <label className="block text-sm font-medium text-foreground mb-1">
             {label}
           </label>
         )}
         <textarea
           className={twMerge(
-            "px-4 py-3 bg-secondary/80 border-2 shadow-sm border-accent/30 placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-primary block w-full rounded-md text-base focus:ring-1 z-10 relative text-foreground",
+            "px-4 py-3 bg-white border border-gray-300 shadow-sm placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-primary block w-full rounded-md text-base focus:ring-2 z-10 relative text-gray-900 transition-all duration-200",
             error
-              ? "border-red-600 focus:border-red-500 focus:ring-red-500"
+              ? "border-red-500 focus:border-red-500 focus:ring-red-500"
               : "",
             fullWidth ? "w-full" : "",
             className
@@ -44,9 +44,9 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           style={{ resize: "vertical" }}
         />
         {error ? (
-          <p className="mt-1 text-sm text-red-400">{error}</p>
+          <p className="mt-1 text-sm text-red-600">{error}</p>
         ) : helperText ? (
-          <p className="mt-1 text-sm text-gray-300">{helperText}</p>
+          <p className="mt-1 text-sm text-gray-500">{helperText}</p>
         ) : null}
       </div>
     );

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateOptimizedResume } from "@/lib/langchain";
+import { extractOriginalResumeInfo } from "@/lib/pdfUtils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,15 +38,18 @@ export async function POST(request: NextRequest) {
       }`;
     }
 
-    // Generate optimized resume using LangChain and Groq
+    // Extract user information from original resume
+    const userInfo = extractOriginalResumeInfo(resume);
 
+    // Generate optimized resume using LangChain and Groq
     const optimizedResume = await generateOptimizedResume(
       jobDescription,
       resume,
-      skills
+      skills,
+      userInfo
     );
 
-    return NextResponse.json({ optimizedResume });
+    return NextResponse.json({ optimizedResume, userInfo });
   } catch (error) {
     console.error("Error in optimize-resume API:", error);
     const errorMessage =

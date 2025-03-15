@@ -1,30 +1,20 @@
 "use client";
 
-import { useState, FormEvent, useEffect } from "react";
+import { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { InputForm } from "@/components/main/InputForm";
-import { AnalysisResults } from "@/components/main/AnalysisResults";
-import { OptimizedResume } from "@/components/main/OptimizedResume";
-import { AnalysisResult } from "@/types";
 
 export default function Home() {
+  const router = useRouter();
   const [jobDescription, setJobDescription] = useState("");
   const [resume, setResume] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [skills, setSkills] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isOptimizing, setIsOptimizing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
-    null
-  );
-  const [optimizedResume, setOptimizedResume] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"input" | "results" | "optimized">(
-    "input"
-  );
   const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (file: File | null) => {
     setResumeFile(file);
-    // Clear text resume when file is selected
     if (file) {
       setResume("");
     }
@@ -32,41 +22,38 @@ export default function Home() {
 
   const handleAnalyzeResume = async (e: FormEvent) => {
     e.preventDefault();
-
     if (!jobDescription.trim()) {
       setError("Please enter a job description");
       return;
     }
-
-    // Both resume text and file are optional
     setError(null);
     setIsAnalyzing(true);
-
     try {
       const formData = new FormData();
       formData.append("jobDescription", jobDescription);
-
       if (resumeFile) {
         formData.append("resumeFile", resumeFile);
       } else if (resume.trim()) {
         formData.append("resume", resume);
       }
-
       formData.append("skills", skills);
-
       const response = await fetch("/api/analyze-resume", {
         method: "POST",
         body: formData,
       });
-
       if (!response.ok) {
         throw new Error("Failed to analyze resume");
       }
-
       const result = await response.json();
-      setAnalysisResult(result);
 
-      setActiveTab("results");
+      // Store the result in localStorage
+      localStorage.setItem("analysisResult", JSON.stringify(result));
+      localStorage.setItem("jobDescription", jobDescription);
+      localStorage.setItem("skills", skills);
+      if (resume) localStorage.setItem("resume", resume);
+
+      // Navigate to results page
+      router.push("/results");
     } catch (error) {
       console.error("Error analyzing resume:", error);
       setError("Failed to analyze resume. Please try again.");
@@ -75,194 +62,50 @@ export default function Home() {
     }
   };
 
-  const handleOptimizeResume = async () => {
-    setIsOptimizing(true);
-    setError(null);
-
-    try {
-      const formData = new FormData();
-      formData.append("jobDescription", jobDescription);
-
-      if (resumeFile) {
-        formData.append("resumeFile", resumeFile);
-      } else if (resume.trim()) {
-        formData.append("resume", resume);
-      }
-
-      formData.append("skills", skills);
-
-      const response = await fetch("/api/optimize-resume", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Server error:", errorData);
-        throw new Error(errorData.error || "Failed to optimize resume");
-      }
-
-      const result = await response.json();
-
-      if (!result.optimizedResume) {
-        console.error("Received empty optimized resume");
-        throw new Error("Received empty response from server");
-      }
-
-      // Use a callback to ensure the state is actually updated before moving to the next tab
-      setOptimizedResume(result.optimizedResume);
-
-      // Delay the tab change slightly to ensure state is updated
-      setTimeout(() => {
-        setActiveTab("optimized");
-      }, 100);
-    } catch (error) {
-      console.error("Error optimizing resume:", error);
-      setError(
-        "Failed to optimize resume. Please try again." +
-          (error instanceof Error ? ` (${error.message})` : "")
-      );
-    } finally {
-      setIsOptimizing(false);
-    }
-  };
-
-  // Add a useEffect to log when the component renders
-  useEffect(() => {}, [
-    activeTab,
-    optimizedResume,
-    analysisResult,
-    isOptimizing,
-    isAnalyzing,
-  ]);
-
-  // Add a new useEffect specifically to handle optimizedResume changes
-  useEffect(() => {
-    if (optimizedResume && activeTab === "results") {
-    }
-  }, [optimizedResume, activeTab]);
-
-  // Add a special function to force navigation to the optimized tab
-  const forceShowOptimized = () => {
-    // Double check we have an optimized resume
-    if (optimizedResume) {
-      setActiveTab("optimized");
-    } else {
-      setError(
-        "No optimized resume is available yet. Please generate one first."
-      );
-    }
-  };
-
-  const goBackToAnalysis = () => {
-    setActiveTab("results");
-  };
-
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="bg-accent text-gray-50 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-bold">Easy ATS</h1>
-          <p className="text-gray-200 mt-1">
-            Optimize your resume for ATS systems
-          </p>
+    <div className="min-h-screen bg-background text-foreground pt-24">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center py-4">
+          <div>
+            <h1 className="text-3xl font-bold text-primary">Easy ATS</h1>
+            <p className="text-sm text-gray-700">
+              Optimize your resume for ATS systems
+            </p>
+          </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="border-b border-accent/30">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveTab("input")}
-                className={`${
-                  activeTab === "input"
-                    ? "border-primary text-foreground font-bold"
-                    : "border-transparent text-gray-400 hover:text-foreground hover:border-gray-400"
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-base`}
-              >
-                Input
-              </button>
-              <button
-                onClick={() => setActiveTab("results")}
-                disabled={!analysisResult}
-                className={`${
-                  activeTab === "results"
-                    ? "border-primary text-foreground font-bold"
-                    : !analysisResult
-                    ? "border-transparent text-gray-600 cursor-not-allowed"
-                    : "border-transparent text-gray-400 hover:text-foreground hover:border-gray-400"
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-base`}
-              >
-                Analysis Results
-              </button>
-              <button
-                onClick={() => {
-                  // Allow manual navigation if optimizedResume exists
-                  if (optimizedResume) {
-                    setActiveTab("optimized");
-                  }
-                }}
-                disabled={!optimizedResume}
-                className={`${
-                  activeTab === "optimized"
-                    ? "border-primary text-foreground font-bold"
-                    : !optimizedResume
-                    ? "border-transparent text-gray-600 cursor-not-allowed"
-                    : "border-transparent text-gray-400 hover:text-foreground hover:border-gray-400"
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-base`}
-              >
-                Optimized Resume
-              </button>
-            </nav>
-          </div>
-        </div>
+        <section className="mb-12 text-center">
+          <h2 className="text-4xl font-extrabold">Transform Your Resume</h2>
+          <p className="mt-4 text-lg text-gray-600">
+            Get tailored feedback and optimize your resume for success.
+          </p>
+        </section>
 
         {error && (
-          <div className="mb-8 bg-red-900/20 border-2 border-red-700 text-red-200 px-5 py-4 rounded-md shadow-sm">
+          <div className="mb-8 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
             {error}
           </div>
         )}
 
-        {activeTab === "input" && (
-          <InputForm
-            jobDescription={jobDescription}
-            setJobDescription={setJobDescription}
-            resume={resume}
-            setResume={setResume}
-            resumeFile={resumeFile}
-            handleFileChange={handleFileChange}
-            skills={skills}
-            setSkills={setSkills}
-            isAnalyzing={isAnalyzing}
-            handleAnalyzeResume={handleAnalyzeResume}
-          />
-        )}
-
-        {activeTab === "results" && (
-          <AnalysisResults
-            analysisResult={analysisResult}
-            isAnalyzing={isAnalyzing}
-            isOptimizing={isOptimizing}
-            optimizedResume={optimizedResume}
-            handleOptimizeResume={handleOptimizeResume}
-            forceShowOptimized={forceShowOptimized}
-          />
-        )}
-
-        {activeTab === "optimized" && (
-          <OptimizedResume
-            optimizedResume={optimizedResume}
-            isOptimizing={isOptimizing}
-            handleOptimizeResume={handleOptimizeResume}
-            goBackToAnalysis={goBackToAnalysis}
-          />
-        )}
+        <InputForm
+          jobDescription={jobDescription}
+          setJobDescription={setJobDescription}
+          resume={resume}
+          setResume={setResume}
+          resumeFile={resumeFile}
+          handleFileChange={handleFileChange}
+          skills={skills}
+          setSkills={setSkills}
+          isAnalyzing={isAnalyzing}
+          handleAnalyzeResume={handleAnalyzeResume}
+        />
       </main>
 
-      <footer className="bg-accent/80 text-white mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <p className="text-center text-gray-200 text-sm">
+      <footer className="bg-white/80 backdrop-blur-lg py-6 shadow-inner">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-sm text-gray-600">
             &copy; {new Date().getFullYear()} Easy ATS. All rights reserved.
           </p>
         </div>

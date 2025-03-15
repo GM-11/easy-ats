@@ -30,7 +30,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           description="Please wait while we analyze your resume"
         >
           <div className="py-4">
-            <div className="animate-pulse bg-gray-700 h-6 w-full rounded-full mb-4"></div>
+            <div className="animate-pulse bg-gray-300 h-6 w-full rounded-full mb-4"></div>
           </div>
         </Card>
 
@@ -65,22 +65,22 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           />
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-4">
-          <Button
-            onClick={handleOptimizeResume}
-            isLoading={isOptimizing}
-            size="lg"
-            className="font-bold text-lg py-4 px-8"
-          >
-            Generate Optimized Resume
-          </Button>
-
-          {optimizedResume && (
+        <div className="mt-6 flex flex-wrap justify-center gap-4">
+          {!optimizedResume ? (
+            <Button
+              onClick={handleOptimizeResume}
+              isLoading={isOptimizing}
+              size="lg"
+              className="font-bold text-lg py-4 px-8 shadow-md"
+            >
+              {isOptimizing ? "Generating..." : "Generate Optimized Resume"}
+            </Button>
+          ) : (
             <Button
               onClick={forceShowOptimized}
-              variant="secondary"
+              variant="primary"
               size="lg"
-              className="font-bold text-lg py-4 px-8"
+              className="font-bold text-lg py-4 px-8 shadow-md"
             >
               View Optimized Resume
             </Button>
@@ -92,20 +92,25 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         <Card
           title="Strengths"
           description="What's working well in your resume"
+          className="h-full"
         >
           <ul className="list-disc pl-5 space-y-2">
             {analysisResult.strengths.map((strength, index) => (
-              <li key={index} className="text-base text-gray-200">
+              <li key={index} className="text-base text-gray-700">
                 {strength}
               </li>
             ))}
           </ul>
         </Card>
 
-        <Card title="Weaknesses" description="Areas that need improvement">
+        <Card
+          title="Weaknesses"
+          description="Areas that need improvement"
+          className="h-full"
+        >
           <ul className="list-disc pl-5 space-y-2">
             {analysisResult.weaknesses.map((weakness, index) => (
-              <li key={index} className="text-base text-gray-200">
+              <li key={index} className="text-base text-gray-700">
                 {weakness}
               </li>
             ))}
@@ -121,7 +126,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           {analysisResult.keywords.map((keyword, index) => (
             <span
               key={index}
-              className="inline-flex items-center px-4 py-2 rounded-full text-base font-medium bg-primary/20 text-gray-200 border border-primary/40"
+              className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20"
             >
               {keyword}
             </span>
@@ -135,7 +140,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
       >
         <ul className="list-disc pl-5 space-y-2">
           {analysisResult.improvement_suggestions.map((suggestion, index) => (
-            <li key={index} className="text-base text-gray-200">
+            <li key={index} className="text-base text-gray-700">
               {suggestion}
             </li>
           ))}
