@@ -25,11 +25,20 @@ export default function ResultsPage() {
   // Load data from localStorage on component mount
   useEffect(() => {
     try {
+      console.log("Loading data from localStorage");
       const savedAnalysisResult = localStorage.getItem("analysisResult");
       const savedJobDescription = localStorage.getItem("jobDescription");
       const savedSkills = localStorage.getItem("skills");
       const savedResume = localStorage.getItem("resume");
       const savedOptimizedResume = localStorage.getItem("optimizedResume");
+
+      // Debug log what we're finding in localStorage
+      console.log("Found in localStorage:");
+      console.log("- analysisResult:", !!savedAnalysisResult);
+      console.log("- jobDescription:", !!savedJobDescription);
+      console.log("- skills:", !!savedSkills);
+      console.log("- resume:", !!savedResume);
+      console.log("- optimizedResume:", !!savedOptimizedResume);
 
       if (savedAnalysisResult) {
         setAnalysisResult(JSON.parse(savedAnalysisResult));
@@ -41,7 +50,10 @@ export default function ResultsPage() {
 
       if (savedJobDescription) setJobDescription(savedJobDescription);
       if (savedSkills) setSkills(savedSkills);
-      if (savedResume) setResume(savedResume);
+      if (savedResume) {
+        console.log("Setting resume, length:", savedResume.length);
+        setResume(savedResume);
+      }
       if (savedOptimizedResume) {
         setOptimizedResume(savedOptimizedResume);
       }
@@ -55,32 +67,86 @@ export default function ResultsPage() {
     setIsOptimizing(true);
     setError(null);
 
+    // Log data being sent to the API
+    console.log("Sending data to optimize-resume API:");
+    console.log("Job Description Length:", jobDescription.length);
+    console.log("Resume Length:", resume.length);
+    console.log("Skills:", skills);
+
     try {
+      // Ensure we have the job description
+      if (!jobDescription.trim()) {
+        throw new Error("Job description is required to optimize resume");
+      }
+
+      // Check if resume is empty and try to reload it
+      if (!resume.trim()) {
+        console.log("Resume is empty, trying to reload from localStorage");
+        const savedResume = localStorage.getItem("resume");
+        if (savedResume) {
+          console.log(
+            "Found resume in localStorage, length:",
+            savedResume.length
+          );
+          setResume(savedResume);
+        } else {
+          console.log("No resume found in localStorage");
+        }
+      }
+
       const formData = new FormData();
       formData.append("jobDescription", jobDescription);
+
+      // Ensure we're sending the resume text if available
       if (resume.trim()) {
+        console.log("Adding resume text to request, length:", resume.length);
         formData.append("resume", resume);
+      } else {
+        console.log("No resume text available to send");
+
+        // Try to get resume from localStorage as a last resort
+        const savedResume = localStorage.getItem("resume");
+        if (savedResume) {
+          console.log(
+            "Adding resume from localStorage, length:",
+            savedResume.length
+          );
+          formData.append("resume", savedResume);
+        }
       }
+
+      // Add skills data
       formData.append("skills", skills);
 
+      // Make the API request
+      console.log("Sending request to optimize-resume API");
       const response = await fetch("/api/optimize-resume", {
         method: "POST",
         body: formData,
       });
 
+      // Handle non-200 responses
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("Server error:", errorData);
+        console.error("Server error response:", errorData);
         throw new Error(errorData.error || "Failed to optimize resume");
       }
 
+      // Parse the response
+      console.log("Received successful response from optimize-resume API");
       const result = await response.json();
 
+      // Validate the response
       if (!result.optimizedResume) {
-        console.error("Received empty optimized resume");
-        throw new Error("Received empty response from server");
+        console.error("Response missing optimizedResume field:", result);
+        throw new Error("Server returned an incomplete response");
       }
 
+      // Set the optimized resume state
+      console.log(
+        "Setting optimized resume (length):",
+        result.optimizedResume.length
+      );
       setOptimizedResume(result.optimizedResume);
 
       // Log the extracted user info for debugging
@@ -172,9 +238,9 @@ export default function ResultsPage() {
             <nav className="flex justify-center gap-4">
               <button
                 onClick={() => setActiveTab("analysis")}
-                className={`px-6 py-3 rounded-xl transition font-medium ${
+                className={`px-6 py-3 rounded-xl transition font-medium cursor-pointer ${
                   activeTab === "analysis"
-                    ? "bg-primary-600 text-white shadow-md ring-2 ring-primary-600 ring-offset-2"
+                    ? "bg-primary-600 text-black shadow-md ring-2 ring-primary-600 ring-offset-2"
                     : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
                 }`}
               >
@@ -199,9 +265,9 @@ export default function ResultsPage() {
               <button
                 onClick={() => setActiveTab("optimized")}
                 disabled={!optimizedResume && isOptimizing === false}
-                className={`px-6 py-3 rounded-xl transition font-medium ${
+                className={`px-6 py-3 rounded-xl transition font-medium cursor-pointer ${
                   activeTab === "optimized"
-                    ? "bg-primary-600 text-white shadow-md ring-2 ring-primary-600 ring-offset-2"
+                    ? "bg-primary-600 text-black shadow-md ring-2 ring-primary-600 ring-offset-2"
                     : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
                 } ${
                   !optimizedResume && isOptimizing === false
@@ -261,7 +327,7 @@ export default function ResultsPage() {
                 isOptimizing={isOptimizing}
                 optimizedResume={optimizedResume}
                 handleOptimizeResume={handleOptimizeResume}
-                forceShowOptimized={() => setActiveTab("optimized")}
+                forceShowOptimized={handleOptimizeResume}
               />
             )}
 
