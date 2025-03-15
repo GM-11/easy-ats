@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
 
 interface ProgressProps {
@@ -6,8 +6,10 @@ interface ProgressProps {
   max?: number;
   label?: string;
   showValue?: boolean;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   className?: string;
+  variant?: "default" | "gradient" | "striped";
+  animation?: boolean;
 }
 
 export const Progress: React.FC<ProgressProps> = ({
@@ -17,57 +19,91 @@ export const Progress: React.FC<ProgressProps> = ({
   showValue = true,
   size = "md",
   className,
+  variant = "default",
+  animation = true,
 }) => {
+  const [displayValue, setDisplayValue] = useState(0);
   const percentage = Math.min(Math.max(0, (value / max) * 100), 100);
+
+  useEffect(() => {
+    if (animation) {
+      const timer = setTimeout(() => {
+        setDisplayValue(percentage);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else {
+      setDisplayValue(percentage);
+    }
+  }, [percentage, animation]);
 
   // Determine color based on percentage
   let colorClass = "";
   if (percentage < 40) {
-    colorClass = "bg-red-600";
+    colorClass =
+      variant === "gradient"
+        ? "bg-gradient-to-r from-red-500 to-red-600"
+        : "bg-red-600";
   } else if (percentage < 70) {
-    colorClass = "bg-amber-500";
+    colorClass =
+      variant === "gradient"
+        ? "bg-gradient-to-r from-amber-400 to-amber-500"
+        : "bg-amber-500";
   } else {
-    colorClass = "bg-emerald-500";
+    colorClass =
+      variant === "gradient"
+        ? "bg-gradient-to-r from-emerald-400 to-emerald-600"
+        : "bg-emerald-500";
   }
 
-  // Determine height based on size
-  const heightClass = {
-    sm: "h-2",
-    md: "h-3",
-    lg: "h-4",
-  }[size];
+  // Striped variant
+  if (variant === "striped") {
+    colorClass += " bg-stripes";
+  }
+
+  // Determine height and rounded based on size
+  const sizeClasses = {
+    sm: "h-2 text-xs",
+    md: "h-3 text-sm",
+    lg: "h-4 text-base",
+    xl: "h-6 text-lg",
+  };
 
   return (
     <div className={twMerge("w-full", className)}>
       {label && (
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-sm font-medium text-gray-200">{label}</span>
+        <div className="flex justify-between items-center mb-2">
+          <span className={`font-medium text-gray-700 ${sizeClasses[size]}`}>
+            {label}
+          </span>
           {showValue && (
-            <span className="text-sm font-medium text-gray-200">
-              {Math.round(percentage)}%
+            <span className={`font-medium text-gray-700 ${sizeClasses[size]}`}>
+              {Math.round(displayValue)}%
             </span>
           )}
         </div>
       )}
       <div
         className={twMerge(
-          "w-full bg-gray-700 rounded-full overflow-hidden shadow-inner",
-          heightClass
+          "w-full bg-gray-200 rounded-full overflow-hidden shadow-inner",
+          sizeClasses[size]
         )}
       >
         <div
           className={twMerge(
-            "rounded-full transition-all duration-500 ease-out",
+            "rounded-full transition-all duration-1000 ease-out",
             colorClass,
-            heightClass
+            sizeClasses[size],
+            animation && "animate-pulse-slow"
           )}
-          style={{ width: `${percentage}%` }}
+          style={{ width: `${displayValue}%` }}
         />
       </div>
       {!label && showValue && (
-        <span className="text-sm font-medium text-gray-200 mt-1">
-          {Math.round(percentage)}%
-        </span>
+        <div className="flex justify-end mt-1">
+          <span className={`font-medium text-gray-700 ${sizeClasses[size]}`}>
+            {Math.round(displayValue)}%
+          </span>
+        </div>
       )}
     </div>
   );

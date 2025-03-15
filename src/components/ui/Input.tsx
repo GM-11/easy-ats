@@ -16,13 +16,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className={fullWidth ? "w-full" : ""}>
         {label && (
-          <label className="block text-sm font-medium text-foreground mb-1">
-            {label}
-          </label>
+          <label className="block text-sm font-medium mb-1">{label}</label>
         )}
         <input
           className={twMerge(
-            "px-4 py-3 bg-white border border-gray-300 shadow-sm placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-primary block rounded-md text-base focus:ring-2 z-10 relative text-gray-900 transition-all duration-200",
+            "px-4 py-3 border border-gray-300 shadow-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-blue-500 block rounded-md text-base focus:ring-2 z-10 relative transition-all duration-200",
             error
               ? "border-red-600 focus:border-red-500 focus:ring-red-500"
               : "",

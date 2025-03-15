@@ -106,9 +106,9 @@ export const OptimizedResume: React.FC<OptimizedResumeProps> = ({
         {isOptimizing ? (
           <div className="p-6">
             <div className="mb-4 text-center">
-              <div className="inline-block rounded-full bg-primary/20 p-3">
+              <div className="inline-block rounded-full bg-primary-50 p-3">
                 <svg
-                  className="animate-spin h-6 w-6 text-primary"
+                  className="animate-spin h-6 w-6 text-primary-600"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -141,7 +141,7 @@ export const OptimizedResume: React.FC<OptimizedResumeProps> = ({
             </pre>
           </div>
         ) : (
-          <div className="p-6 text-red-700 bg-red-100 rounded-md border border-red-300">
+          <div className="p-6 text-red-700 bg-red-50 rounded-md border border-red-300">
             Error: Optimized resume not available. Please try generating it
             again.
           </div>

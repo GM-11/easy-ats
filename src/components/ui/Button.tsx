@@ -1,34 +1,47 @@
 import React from "react";
 import { twMerge } from "tailwind-merge";
 
-type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "accent";
-type ButtonSize = "sm" | "md" | "lg";
+type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "outline"
+  | "ghost"
+  | "accent"
+  | "success"
+  | "warning";
+type ButtonSize = "sm" | "md" | "lg" | "xl";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   isLoading?: boolean;
   fullWidth?: boolean;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
   children: React.ReactNode;
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-primary text-foreground hover:bg-primary/90 focus:ring-primary/70 shadow-button",
+    "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500/50 shadow-md",
   secondary:
-    "bg-secondary text-foreground hover:bg-secondary/90 focus:ring-secondary/70 shadow-button",
+    "bg-purple-600 text-white hover:bg-purple-700 focus:ring-purple-500/50 shadow-md",
   accent:
-    "bg-accent text-foreground hover:bg-accent/90 focus:ring-accent/70 shadow-button",
+    "bg-teal-600 text-white hover:bg-teal-700 focus:ring-teal-500/50 shadow-md",
+  success:
+    "bg-green-600 text-white hover:bg-green-700 focus:ring-green-500/50 shadow-md",
+  warning:
+    "bg-amber-600 text-white hover:bg-amber-700 focus:ring-amber-500/50 shadow-md",
   outline:
-    "bg-transparent border-2 border-primary text-foreground hover:bg-primary/10 focus:ring-primary/50",
-  ghost:
-    "bg-transparent text-foreground hover:bg-primary/10 focus:ring-primary/50",
+    "bg-transparent border-2 border-blue-500 text-blue-700 hover:bg-blue-50 focus:ring-blue-500/30",
+  ghost: "bg-transparent text-blue-700 hover:bg-blue-50 focus:ring-blue-500/30",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: "text-sm py-2 px-3",
-  md: "text-base py-2.5 px-4",
-  lg: "text-lg py-3 px-5",
+  sm: "text-xs py-1.5 px-3 rounded-lg",
+  md: "text-sm py-2 px-4 rounded-lg",
+  lg: "text-base py-2.5 px-5 rounded-xl",
+  xl: "text-lg py-3 px-6 rounded-xl",
 };
 
 export const Button = ({
@@ -36,6 +49,8 @@ export const Button = ({
   size = "md",
   isLoading = false,
   fullWidth = false,
+  leftIcon,
+  rightIcon,
   className,
   disabled,
   children,
@@ -44,11 +59,13 @@ export const Button = ({
   return (
     <button
       className={twMerge(
-        "font-medium rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background flex items-center justify-center transition-all duration-200 active:scale-95",
+        "font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white flex items-center justify-center transition-all duration-200 active:scale-[0.98]",
         variantStyles[variant],
         sizeStyles[size],
         fullWidth ? "w-full" : "",
-        disabled || isLoading ? "opacity-70 cursor-not-allowed" : "",
+        disabled || isLoading
+          ? "opacity-70 cursor-not-allowed active:scale-100"
+          : "",
         className
       )}
       disabled={disabled || isLoading}
@@ -77,8 +94,13 @@ export const Button = ({
             ></path>
           </svg>
         </div>
+      ) : leftIcon ? (
+        <div className="mr-2">{leftIcon}</div>
       ) : null}
+
       {children}
+
+      {rightIcon && !isLoading ? <div className="ml-2">{rightIcon}</div> : null}
     </button>
   );
 };
