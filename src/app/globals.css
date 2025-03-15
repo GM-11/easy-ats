@@ -1,8 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #010104;
+  --foreground: #ebe9fc;
+  --primary: #3a31d8;
+  --secondary: #020024;
+  --accent: #0600c2;
+
+  /* Card and UI element colors */
+  --card-bg: #020024;
+  --card-border: #0600c2;
+  --card-header: #020029;
 }
 
 @theme inline {
@@ -14,8 +22,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #010104;
+    --foreground: #ebe9fc;
   }
 }
 
@@ -23,4 +31,21 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Tailwind CSS custom colors */
+@layer base {
+  :root {
+    --color-primary-50: #efeeff;
+    --color-primary-100: #e2dfff;
+    --color-primary-200: #c8c3ff;
+    --color-primary-300: #a89aff;
+    --color-primary-400: #8a6dff;
+    --color-primary-500: #6e43ff;
+    --color-primary-600: #5834f5;
+    --color-primary-700: #3a31d8;
+    --color-primary-800: #2b279f;
+    --color-primary-900: #0600c2;
+    --color-primary-950: #020024;
+  }
 }
