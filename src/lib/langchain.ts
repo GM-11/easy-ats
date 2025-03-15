@@ -88,21 +88,31 @@ export const createResumeOptimizationTemplate = () => {
 You are an expert resume writer specializing in optimizing resumes for ATS systems while maintaining integrity and professionalism.
 Your task is to rewrite and optimize the provided resume to better match the job description without fabricating experience or qualifications.
 
-JOB DESCRIPTION:
+=========== JOB DESCRIPTION ===========
 {jobDescription}
+=======================================
 
-CURRENT RESUME:
+=========== CURRENT RESUME ===========
 {resume}
+======================================
 
-CANDIDATE SKILLS:
+=========== CANDIDATE SKILLS ===========
 {skills}
+========================================
 
-EXTRACTED USER INFORMATION:
+=========== EXTRACTED USER INFORMATION ===========
 Name: {userName}
 Email: {userEmail}
 Phone: {userPhone}
-Education: {userEducation}
-Experience Highlights: {userExperience}
+
+Education:
+{userEducation}
+
+Experience Highlights:
+{userExperience}
+==================================================
+
+IMPORTANT: Carefully analyze the above information to create an ATS-optimized resume.
 
 Please create an optimized version of the resume that:
 1. Incorporates relevant keywords from the job description
@@ -110,19 +120,28 @@ Please create an optimized version of the resume that:
 3. Uses industry-standard formatting and organization
 4. Quantifies achievements where possible
 5. Maintains the same basic work history and education but optimizes the presentation
-6. Uses concise, powerful language that will pass through ATS systems
-7. ALWAYS includes the user's actual contact information (name, email, phone) at the top of the resume
-8. Maintains the user's actual education credentials without fabrication
-9. Focuses on the user's most relevant experience that matches the job description
+6. Uses concise, powerful action verbs and language that will pass through ATS systems
+7. IMPORTANT: ALWAYS includes the user's actual contact information (name, email, phone) at the top of the resume
+8. IMPORTANT: Maintains the user's actual education credentials and work experience without fabrication
+9. IMPORTANT: Focuses on the user's most relevant experience that matches the job description
+
+DO NOT make up accomplishments, previous job positions, or educational credentials.
+DO NOT change job titles, company names, dates, or other factual information.
+DO USE keywords from the job description and optimize the language of real experiences.
 
 Format the resume professionally, maintaining clear sections for:
-- Summary/Objective (tailored to this specific job)
+- Header (Name and Contact Information)
+- Summary/Professional Profile (tailored to this specific job)
 - Skills (prioritizing those most relevant to the job description)
 - Experience (emphasizing achievements and responsibilities most relevant to the position)
 - Education
-- Any other relevant sections from the original resume
+- Any certifications or other relevant sections from the original resume
 
 The optimized resume should be in a clean, ATS-friendly format.
+Do not use tables, columns, images, or other formatting that could confuse ATS systems.
+Use bullet points for better readability.
+
+Your optimized resume output should be properly formatted and ready for the user to copy and use immediately.
 `;
 
   return PromptTemplate.fromTemplate(templateInstructions);
@@ -213,20 +232,38 @@ export async function generateOptimizedResume(
   }
 ) {
   try {
+    // Log inputs for debugging
+    console.log("Starting resume optimization process");
+    console.log("Job Description Length:", jobDescription.length);
+    console.log("Resume Length:", resume.length);
+    console.log("Skills Length:", skills.length);
+
     // Truncate inputs to stay within token limits
     const truncatedResume = truncateText(resume, 4000);
     const truncatedJobDescription = truncateText(jobDescription, 3000);
     const truncatedSkills = truncateText(skills, 500);
 
     // Set default user info if not provided
-    const userName = userInfo?.name || "";
-    const userEmail = userInfo?.email || "";
-    const userPhone = userInfo?.phone || "";
-    const userEducation = userInfo?.education?.join("\n") || "";
-    const userExperience = userInfo?.experience?.join("\n") || "";
+    const userName = userInfo?.name || "Not provided";
+    const userEmail = userInfo?.email || "Not provided";
+    const userPhone = userInfo?.phone || "Not provided";
+    const userEducation = userInfo?.education?.join("\n") || "Not provided";
+    const userExperience = userInfo?.experience?.join("\n") || "Not provided";
+
+    console.log("Processed user info:", {
+      nameAvailable: !!userInfo?.name,
+      emailAvailable: !!userInfo?.email,
+      phoneAvailable: !!userInfo?.phone,
+      educationEntries: userInfo?.education?.length || 0,
+      experienceEntries: userInfo?.experience?.length || 0,
+    });
 
     const model = getGroqModel();
+    console.log("Model initialized");
+
     const template = createResumeOptimizationTemplate();
+    console.log("Template created");
+
     const outputParser = new StringOutputParser();
 
     const prompt = await template.format({
@@ -240,11 +277,27 @@ export async function generateOptimizedResume(
       userExperience,
     });
 
+    console.log("Prompt formatted, sending to model");
+    console.log("Prompt first 100 chars:", prompt.substring(0, 100) + "...");
+    console.log(
+      "Prompt last 100 chars:",
+      prompt.substring(prompt.length - 100) + "..."
+    );
+
     const response = await model.invoke(prompt);
+    console.log("Received response from model");
+
     const responseText =
       typeof response.content === "string"
         ? response.content
         : JSON.stringify(response.content);
+
+    console.log("Response length:", responseText.length);
+    console.log(
+      "Response first 100 chars:",
+      responseText.substring(0, 100) + "..."
+    );
+
     const optimizedResume = await outputParser.parse(responseText);
 
     return optimizedResume;
