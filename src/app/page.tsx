@@ -52,7 +52,34 @@ export default function Home() {
       localStorage.setItem("analysisResult", JSON.stringify(result));
       localStorage.setItem("jobDescription", jobDescription);
       localStorage.setItem("skills", skills);
-      if (resume) localStorage.setItem("resume", resume);
+
+      // Always store resume data - either from text or file
+      if (resume.trim()) {
+        console.log(
+          "Storing resume text in localStorage, length:",
+          resume.length
+        );
+        localStorage.setItem("resume", resume);
+      } else if (resumeFile) {
+        console.log(
+          "Resume file provided, storing file name:",
+          resumeFile.name
+        );
+        localStorage.setItem("resumeFileName", resumeFile.name);
+        // We need to read the file content as text and store it
+        try {
+          const fileText = await resumeFile.text();
+          console.log(
+            "Storing resume file content in localStorage, length:",
+            fileText.length
+          );
+          localStorage.setItem("resume", fileText);
+        } catch (err) {
+          console.error("Error reading resume file:", err);
+        }
+      } else {
+        console.log("No resume data to store in localStorage");
+      }
 
       // Navigate to results page
       router.push("/results");
