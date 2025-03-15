@@ -76,7 +76,6 @@ export default function Home() {
   };
 
   const handleOptimizeResume = async () => {
-    console.log("Starting optimization process...");
     setIsOptimizing(true);
     setError(null);
 
@@ -86,23 +85,16 @@ export default function Home() {
 
       if (resumeFile) {
         formData.append("resumeFile", resumeFile);
-        console.log("Using resume file:", resumeFile.name);
       } else if (resume.trim()) {
         formData.append("resume", resume);
-        console.log("Using resume text, length:", resume.length);
-      } else {
-        console.log("No resume provided, will generate from scratch");
       }
 
       formData.append("skills", skills);
 
-      console.log("Sending optimize request to API...");
       const response = await fetch("/api/optimize-resume", {
         method: "POST",
         body: formData,
       });
-
-      console.log("API response status:", response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -111,10 +103,6 @@ export default function Home() {
       }
 
       const result = await response.json();
-      console.log(
-        "Optimization result received, length:",
-        result.optimizedResume?.length || 0
-      );
 
       if (!result.optimizedResume) {
         console.error("Received empty optimized resume");
@@ -123,19 +111,10 @@ export default function Home() {
 
       // Use a callback to ensure the state is actually updated before moving to the next tab
       setOptimizedResume(result.optimizedResume);
-      console.log(
-        "Set optimizedResume state, value length:",
-        result.optimizedResume.length
-      );
 
       // Delay the tab change slightly to ensure state is updated
       setTimeout(() => {
-        console.log(
-          "Delayed tab change - Current optimizedResume:",
-          !!optimizedResume
-        );
         setActiveTab("optimized");
-        console.log("Set active tab to 'optimized'");
       }, 100);
     } catch (error) {
       console.error("Error optimizing resume:", error);
@@ -145,42 +124,30 @@ export default function Home() {
       );
     } finally {
       setIsOptimizing(false);
-      console.log("Optimization process complete, isOptimizing set to false");
     }
   };
 
   // Add a useEffect to log when the component renders
-  useEffect(() => {
-    console.log("Component rendered. Current state:", {
-      activeTab,
-      optimizedResumeExists: !!optimizedResume,
-      analysisResultExists: !!analysisResult,
-      isOptimizing,
-      isAnalyzing,
-    });
-  }, [activeTab, optimizedResume, analysisResult, isOptimizing, isAnalyzing]);
+  useEffect(() => {}, [
+    activeTab,
+    optimizedResume,
+    analysisResult,
+    isOptimizing,
+    isAnalyzing,
+  ]);
 
   // Add a new useEffect specifically to handle optimizedResume changes
   useEffect(() => {
     if (optimizedResume && activeTab === "results") {
-      console.log("Detected optimizedResume is available while on results tab");
-      console.log("Enabling optimized tab navigation");
     }
   }, [optimizedResume, activeTab]);
 
   // Add a special function to force navigation to the optimized tab
   const forceShowOptimized = () => {
-    console.log("Force navigation to optimized tab triggered");
     // Double check we have an optimized resume
     if (optimizedResume) {
-      console.log(
-        "Optimized resume content exists, length:",
-        optimizedResume.length
-      );
-      console.log("Forcing tab change to optimized");
       setActiveTab("optimized");
     } else {
-      console.log("Cannot navigate - no optimized resume available");
       setError(
         "No optimized resume is available yet. Please generate one first."
       );
@@ -233,9 +200,6 @@ export default function Home() {
                 onClick={() => {
                   // Allow manual navigation if optimizedResume exists
                   if (optimizedResume) {
-                    console.log(
-                      "Navigating to optimized resume tab via button click"
-                    );
                     setActiveTab("optimized");
                   }
                 }}

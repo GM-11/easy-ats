@@ -1,6 +1,6 @@
 import React, { forwardRef, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
-import { Button } from "./ui/Button";
+import { Button } from "./Button";
 
 interface FileUploadProps {
   label?: string;
