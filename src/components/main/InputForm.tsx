@@ -75,44 +75,16 @@ export const InputForm: React.FC<InputFormProps> = ({
 
         <div className="pt-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Your Resume <span className="text-gray-400">(optional)</span>
+            Your Resume <span className="text-red-500">*</span>
           </label>
 
-          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-6">
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
             <FileUpload
               accept=".pdf,.doc,.docx"
               helperText="Upload a PDF or Word document (max 5MB)"
               onFileChange={handleFileChange}
               className="bg-white"
             />
-
-            {!resumeFile && (
-              <>
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300"></div>
-                  </div>
-                  <div className="relative flex justify-center">
-                    <span className="bg-gray-50 px-3 text-sm text-gray-500">
-                      OR
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Textarea
-                    placeholder="Paste your resume text here..."
-                    value={resume}
-                    onChange={(e) => setResume(e.target.value)}
-                    rows={8}
-                    className="bg-white transition-shadow focus:shadow-highlight"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Plain text format works best for ATS systems.
-                  </p>
-                </div>
-              </>
-            )}
 
             {resumeFile && (
               <div className="mt-2 flex items-center justify-between bg-blue-50 p-2 rounded-lg border border-blue-100">
@@ -143,6 +115,11 @@ export const InputForm: React.FC<InputFormProps> = ({
                 </button>
               </div>
             )}
+
+            <p className="text-xs text-gray-500 mt-2">
+              For best results, use a well-formatted PDF or Word document. We'll
+              extract the text content for ATS analysis.
+            </p>
           </div>
         </div>
       </div>

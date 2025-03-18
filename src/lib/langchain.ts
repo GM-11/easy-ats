@@ -1,5 +1,4 @@
 import { ChatGroq } from "@langchain/groq";
-import { StructuredOutputParser } from "langchain/output_parsers";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 
@@ -26,25 +25,6 @@ const truncateText = (text: string, maxLength: number = 4000): string => {
     "\n\n[Content truncated due to length limits. The analysis is based on the above portion of the text.]"
   );
 };
-
-// Parser for ATS score analysis
-// export const atsScoreParser = StructuredOutputParser.fromZodSchema(
-//     z.object({
-//         score: z.number().describe('ATS score from 0-100'),
-//         strengths: z
-//             .array(z.string())
-//             .describe('List of strengths in the resume relative to the job description'),
-//         weaknesses: z
-//             .array(z.string())
-//             .describe('List of weaknesses or missing elements in the resume relative to the job description'),
-//         keywords: z
-//             .array(z.string())
-//             .describe('Important keywords from the job description that should be included'),
-//         improvement_suggestions: z
-//             .array(z.string())
-//             .describe('Specific suggestions to improve the resume for this job'),
-//     })
-// );
 
 // Prompt template for ATS score analysis
 export const createAtsScoreTemplate = () => {
