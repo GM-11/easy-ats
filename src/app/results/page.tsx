@@ -534,6 +534,7 @@ Certifications:
         );
         // Keep tracked of extracted text but don't override current text content
         localStorage.setItem("extractedResumeText", result.extractedText);
+        setResume(result.extractedText);
 
         // Make sure editableContent is updated if we're in edit mode on the original tab
         if (isEditMode && activeResumeTab === "original") {
@@ -577,23 +578,160 @@ Certifications:
   };
 
   const handleGetNewScore = async () => {
+    // Prevent running if already in progress
+    if (isOptimizing) {
+      console.log("Already optimizing, ignoring duplicate request");
+      return;
+    }
+
     setIsOptimizing(true);
     setError(null);
 
     try {
-      // Create a form with the current resume (optimized if active tab is optimized)
+      // Debug current state before proceeding
+      console.log("=== GET NEW SCORE DEBUG INFO ===");
+      console.log("Current Tab:", activeResumeTab);
+      console.log("isEditMode:", isEditMode);
+
+      // DIRECTLY read content from localStorage first for more reliability
+      const storedOptimizedResume = localStorage.getItem("optimizedResume");
+      const storedResume = localStorage.getItem("resume");
+      const extractedResumeText = localStorage.getItem("extractedResumeText");
+
+      console.log("Content from localStorage:");
+      console.log(
+        "- storedOptimizedResume length:",
+        storedOptimizedResume?.length || 0
+      );
+      console.log("- storedResume length:", storedResume?.length || 0);
+      console.log(
+        "- extractedResumeText length:",
+        extractedResumeText?.length || 0
+      );
+
+      // Content from React state (less reliable due to async updates)
+      console.log("Content from React state:");
+      console.log("- optimizedResume length:", optimizedResume?.length || 0);
+      console.log("- resume length:", resume?.length || 0);
+
+      // Create the form data object
       const formData = new FormData();
       formData.append("jobDescription", jobDescription);
 
-      const currentResume =
-        activeResumeTab === "optimized" && optimizedResume
-          ? optimizedResume
-          : resume;
+      // Determine which content to use, PRIORITIZING localStorage over React state
+      let currentResume = "";
+      let contentSource = "";
 
+      if (activeResumeTab === "optimized") {
+        // First priority: localStorage optimized resume
+        if (
+          storedOptimizedResume &&
+          storedOptimizedResume.length > 100 &&
+          !storedOptimizedResume.startsWith("%PDF")
+        ) {
+          console.log("Using optimized resume from localStorage");
+          currentResume = storedOptimizedResume;
+          contentSource = "localStorage-optimized";
+
+          // Update state to match localStorage (not required for API call but keeps UI consistent)
+          setOptimizedResume(storedOptimizedResume);
+        }
+        // Second priority: React state optimized resume
+        else if (
+          optimizedResume &&
+          optimizedResume.length > 100 &&
+          !optimizedResume.startsWith("%PDF")
+        ) {
+          console.log("Using optimized resume from React state");
+          currentResume = optimizedResume;
+          contentSource = "state-optimized";
+        }
+        // Third priority: localStorage original resume
+        else if (
+          storedResume &&
+          storedResume.length > 100 &&
+          !storedResume.startsWith("%PDF")
+        ) {
+          console.log("Falling back to original resume from localStorage");
+          currentResume = storedResume;
+          contentSource = "localStorage-original";
+
+          // Update state for consistency
+          setResume(storedResume);
+        }
+        // Fourth priority: React state original resume
+        else if (resume && resume.length > 100 && !resume.startsWith("%PDF")) {
+          console.log("Falling back to original resume from React state");
+          currentResume = resume;
+          contentSource = "state-original";
+        }
+        // Last resort: extracted text
+        else if (extractedResumeText && extractedResumeText.length > 100) {
+          console.log("Using extracted resume text from localStorage");
+          currentResume = extractedResumeText;
+          contentSource = "localStorage-extracted";
+
+          // Update state for consistency
+          setResume(extractedResumeText);
+        } else {
+          throw new Error(
+            "No valid resume content found. Please edit your resume first."
+          );
+        }
+      } else {
+        // Original tab - similar priority but without optimized content
+        if (
+          storedResume &&
+          storedResume.length > 100 &&
+          !storedResume.startsWith("%PDF")
+        ) {
+          console.log("Using original resume from localStorage");
+          currentResume = storedResume;
+          contentSource = "localStorage-original";
+
+          // Update state for consistency
+          setResume(storedResume);
+        } else if (
+          resume &&
+          resume.length > 100 &&
+          !resume.startsWith("%PDF")
+        ) {
+          console.log("Using original resume from React state");
+          currentResume = resume;
+          contentSource = "state-original";
+        } else if (extractedResumeText && extractedResumeText.length > 100) {
+          console.log("Using extracted resume text from localStorage");
+          currentResume = extractedResumeText;
+          contentSource = "localStorage-extracted";
+
+          // Update state for consistency
+          setResume(extractedResumeText);
+        } else {
+          throw new Error(
+            "No valid resume content found. Please edit your resume first."
+          );
+        }
+      }
+
+      // Final validation
+      console.log("Selected content source:", contentSource);
+      console.log("Final currentResume length:", currentResume.length);
+      console.log("First 50 chars:", currentResume.substring(0, 50));
+
+      if (!currentResume || currentResume.length < 100) {
+        throw new Error(
+          "Selected resume content is too short. Please edit your resume to add more content."
+        );
+      }
+
+      // Add to form data and make the API call
       formData.append("resume", currentResume);
       formData.append("skills", skills);
 
-      // Call the analyze API endpoint
+      console.log(
+        "Sending request to analyze-resume API with content from:",
+        contentSource
+      );
       const response = await fetch("/api/analyze-resume", {
         method: "POST",
         body: formData,
@@ -604,28 +742,28 @@ Certifications:
         throw new Error(errorData.error || "Failed to analyze resume");
       }
 
-      // Get the new analysis result
+      // Process the response
       const result = await response.json();
       setAnalysisResult(result);
 
-      // Check if the result contains extractedText
-      if (result.extractedText) {
+      console.log("Successfully updated analysis result");
+
+      // Handle extracted text if available
+      if (result.extractedText && result.extractedText.length > 100) {
         console.log(
-          "Using extractedText from new analysis (length:",
+          "Got extractedText in response (length:",
           result.extractedText.length,
           ")"
         );
 
-        // If we're analyzing the original resume, update it with the extracted text
+        // Save extracted text to localStorage regardless of tab
+        localStorage.setItem("extractedResumeText", result.extractedText);
+
+        // Only update the resume state if we're on the original tab
         if (activeResumeTab === "original") {
+          console.log("Updating original resume with extracted text");
           setResume(result.extractedText);
-          localStorage.setItem("extractedResumeText", result.extractedText);
           localStorage.setItem("resume", result.extractedText);
-        }
-        // If we're analyzing the optimized resume, keep both separate
-        else if (activeResumeTab === "optimized") {
-          // Keep the extracted text for original resume, but don't switch
-          localStorage.setItem("extractedResumeText", result.extractedText);
         }
       }
 
@@ -716,147 +854,6 @@ Certifications:
     router.push("/");
   };
 
-  // Function to parse and format resume text into HTML elements
-  const formatResumeToHTML = (resumeText: string) => {
-    if (!resumeText) return "";
-
-    // Check if the text appears to be PDF content
-    if (resumeText.startsWith("%PDF")) {
-      // Try to extract text from the PDF data
-      const extractedText = extractTextFromPDF(resumeText);
-
-      if (extractedText && extractedText.length > 100) {
-        // Process the extracted text
-        return formatResumeTextToHTML(extractedText);
-      }
-
-      // If extraction failed, show edit prompt
-      return `
-        <div class="p-4 bg-yellow-50 text-yellow-700 rounded-md border border-yellow-200 mb-4">
-          <h3 class="font-bold mb-2">PDF Content Detected</h3>
-          <p class="mb-2">Your resume appears to be in PDF format, which is difficult to display properly.</p>
-          <p class="mb-2">Please use the "Edit Resume" button to edit your resume content.</p>
-        </div>
-        <div class="p-6 text-center">
-          <button onclick="document.querySelector('[aria-label=\\"Edit Resume\\"]').click()" 
-            class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 font-medium">
-            Edit Resume Now
-          </button>
-        </div>
-      `;
-    }
-
-    return formatResumeTextToHTML(resumeText);
-  };
-
-  // Helper function that handles the actual formatting of text to HTML
-  const formatResumeTextToHTML = (resumeText: string) => {
-    // Basic parsing to identify and format resume sections
-    const lines = resumeText.split("\n");
-    let formattedHTML = "";
-    let inSection = false;
-    let inList = false;
-
-    // Try to extract basic contact info
-    const nameMatch = resumeText.match(/^([A-Z][a-z]+\s+[A-Z][a-z]+)/m);
-    const emailMatch = resumeText.match(
-      /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/
-    );
-    const phoneMatch = resumeText.match(/\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
-
-    // Create header section with contact info if found
-    if (nameMatch || emailMatch || phoneMatch) {
-      formattedHTML +=
-        '<div class="mb-6 text-center border-b border-gray-200 pb-6">';
-      if (nameMatch) {
-        formattedHTML += `<h1 class="text-2xl font-bold text-gray-800 mb-2">${nameMatch[0]}</h1>`;
-      }
-
-      formattedHTML +=
-        '<div class="flex justify-center gap-4 text-sm text-gray-600">';
-      if (emailMatch) {
-        formattedHTML += `<div>${emailMatch[0]}</div>`;
-      }
-      if (phoneMatch) {
-        formattedHTML += `<div>${phoneMatch[0]}</div>`;
-      }
-      formattedHTML += "</div></div>";
-    }
-
-    // Process each line to format sections, lists, and paragraphs
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-
-      // Skip empty lines
-      if (line === "") {
-        if (inList) {
-          formattedHTML += "</ul>";
-          inList = false;
-        }
-
-        continue;
-      }
-
-      // Check if this line is a section header
-      // Look for all caps or title case followed by a colon
-      if (
-        (line.toUpperCase() === line && line.length > 0) ||
-        /^[A-Z][a-z]+(\s+[A-Z][a-z]+)*:$/.test(line)
-      ) {
-        // Close any open list
-        if (inList) {
-          formattedHTML += "</ul>";
-          inList = false;
-        }
-
-        // Close previous section if one was open
-        if (inSection) {
-          formattedHTML += "</div>";
-        }
-
-        // Start new section
-        inSection = true;
-        formattedHTML += `<div class="mb-4"><h2 class="text-lg font-bold text-gray-800 mb-2 border-b border-gray-200 pb-1">${line}</h2>`;
-        continue;
-      }
-
-      // Check if this line starts with a bullet point or dash
-      if (
-        line.startsWith("•") ||
-        line.startsWith("-") ||
-        line.startsWith("*")
-      ) {
-        if (!inList) {
-          inList = true;
-          formattedHTML +=
-            '<ul class="list-disc pl-5 space-y-1 text-gray-700 mb-3">';
-        }
-
-        formattedHTML += `<li>${line.substring(1).trim()}</li>`;
-        continue;
-      }
-
-      // Regular line (not a header, not a list item)
-      if (inList) {
-        formattedHTML += "</ul>";
-        inList = false;
-      }
-
-      formattedHTML += `<p class="mb-2 text-gray-700">${line}</p>`;
-    }
-
-    // Close any open tags
-    if (inList) {
-      formattedHTML += "</ul>";
-    }
-
-    if (inSection) {
-      formattedHTML += "</div>";
-    }
-
-    return formattedHTML;
-  };
-
   // Toggle edit mode and ensure current content is loaded
   const toggleEditMode = () => {
     if (!isEditMode) {
@@ -903,6 +900,77 @@ Certifications:
   // Handle content changes in edit mode
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditableContent(e.target.value);
+  };
+
+  // Handle tab switching with auto-optimization
+  const handleTabSwitch = (tab: "original" | "optimized") => {
+    if (isEditMode) {
+      saveChanges();
+    }
+
+    console.log(`Switching to ${tab} resume tab`);
+
+    // Check if we're switching to optimized tab
+    if (tab === "optimized") {
+      // First check if we already have optimized content
+      let hasOptimizedContent = false;
+
+      // Check state first
+      if (optimizedResume && optimizedResume.length > 100) {
+        console.log("Already have optimized resume in state");
+        hasOptimizedContent = true;
+      } else {
+        // Check localStorage
+        const storedOptimizedResume = localStorage.getItem("optimizedResume");
+        if (
+          storedOptimizedResume &&
+          storedOptimizedResume.length > 100 &&
+          !storedOptimizedResume.startsWith("%PDF")
+        ) {
+          console.log("Found optimized resume in localStorage");
+          setOptimizedResume(storedOptimizedResume);
+          hasOptimizedContent = true;
+
+          // Also update editable content if in edit mode
+          if (isEditMode) {
+            setEditableContent(storedOptimizedResume);
+          }
+        }
+      }
+
+      // Only start optimization if we don't have content and aren't already optimizing
+      if (!hasOptimizedContent && !isOptimizing) {
+        // Validate that we have a resume to optimize
+        const extractedResumeText = localStorage.getItem("extractedResumeText");
+        if (
+          (resume && resume.length > 100 && !resume.startsWith("%PDF")) ||
+          (extractedResumeText && extractedResumeText.length > 100)
+        ) {
+          console.log("Starting optimization process");
+          // Set the tab first so the UI updates, then start optimization
+          setActiveResumeTab(tab);
+          setTimeout(() => handleOptimizeResume(), 100); // slight delay to let state update
+          return; // Return early as we're handling the tab switch asynchronously
+        } else {
+          console.log("No valid resume content available for optimization");
+          setError(
+            "Please edit your resume before generating an optimized version."
+          );
+        }
+      }
+    }
+
+    // Set active tab (for cases where we didn't return early)
+    setActiveResumeTab(tab);
+
+    // Update editable content if in edit mode
+    if (isEditMode) {
+      if (tab === "optimized" && optimizedResume) {
+        setEditableContent(optimizedResume);
+      } else {
+        setEditableContent(resume);
+      }
+    }
   };
 
   if (!analysisResult) {
@@ -968,20 +1036,144 @@ Certifications:
     return "Needs improvement. Generate an optimized version to increase your chances.";
   };
 
-  // Update renderResumeDocument to display plain text instead of HTML
+  // Update renderResumeDocument with a fallback mechanism for optimized content
   const renderResumeDocument = () => {
-    // Get the current content based on active tab
-    const currentContent =
-      activeResumeTab === "optimized" && optimizedResume
-        ? optimizedResume
-        : resume;
+    // For optimized tab, check for stored optimized resume if state is empty
+    let currentContent;
+
+    if (activeResumeTab === "optimized") {
+      // Try multiple sources for optimized content
+      if (
+        optimizedResume &&
+        typeof optimizedResume === "string" &&
+        optimizedResume.length > 100
+      ) {
+        // Use state if it's valid
+        console.log("Using optimized resume from state for rendering");
+        currentContent = optimizedResume;
+      } else {
+        // Try to get from localStorage
+        const storedOptimizedResume = localStorage.getItem("optimizedResume");
+        if (
+          storedOptimizedResume &&
+          storedOptimizedResume.length > 100 &&
+          !storedOptimizedResume.startsWith("%PDF")
+        ) {
+          // Use the stored version and update state
+          console.log("Using optimized resume from localStorage for rendering");
+          currentContent = storedOptimizedResume;
+
+          // Update state if not already updating (avoids state update in render)
+          if (!isOptimizing) {
+            console.log("Updating optimizedResume state from localStorage");
+            // Use setTimeout to defer the state update until after render
+            setTimeout(() => {
+              setOptimizedResume(storedOptimizedResume);
+            }, 0);
+          }
+        } else if (
+          resume &&
+          typeof resume === "string" &&
+          resume.length > 100
+        ) {
+          // If we still don't have optimized content, fall back to original resume
+          console.log("Falling back to original resume for rendering");
+          currentContent = resume;
+        } else {
+          // Last resort - check localStorage for original resume
+          const storedResume = localStorage.getItem("resume");
+          if (
+            storedResume &&
+            storedResume.length > 100 &&
+            !storedResume.startsWith("%PDF")
+          ) {
+            console.log(
+              "Using original resume from localStorage as fallback for rendering"
+            );
+            currentContent = storedResume;
+
+            // Update state if not already updating
+            if (!isOptimizing) {
+              setTimeout(() => {
+                setResume(storedResume);
+              }, 0);
+            }
+          } else {
+            // Really nothing is available
+            console.log("No valid content available for rendering");
+            currentContent = "";
+          }
+        }
+      }
+    } else {
+      // Original tab - try state first, then localStorage
+      if (resume && typeof resume === "string" && resume.length > 100) {
+        console.log("Using original resume from state for rendering");
+        currentContent = resume;
+      } else {
+        // Try localStorage
+        const storedResume = localStorage.getItem("resume");
+        if (
+          storedResume &&
+          storedResume.length > 100 &&
+          !storedResume.startsWith("%PDF")
+        ) {
+          console.log("Using original resume from localStorage for rendering");
+          currentContent = storedResume;
+
+          // Update state if not already updating
+          if (!isOptimizing) {
+            setTimeout(() => {
+              setResume(storedResume);
+            }, 0);
+          }
+        } else {
+          // Last resort - try extracted text
+          const extractedResumeText = localStorage.getItem(
+            "extractedResumeText"
+          );
+          if (extractedResumeText && extractedResumeText.length > 100) {
+            console.log("Using extracted resume text for rendering");
+            currentContent = extractedResumeText;
+
+            // Update state
+            if (!isOptimizing) {
+              setTimeout(() => {
+                setResume(extractedResumeText);
+              }, 0);
+            }
+          } else {
+            console.log("No valid content available for rendering");
+            currentContent = "";
+          }
+        }
+      }
+    }
 
     console.log(
       `Rendering document for ${activeResumeTab} tab. Content source: ${contentSource}`
     );
     console.log(
-      `Content length: ${currentContent?.length || 0}, Edit mode: ${isEditMode}`
+      `Content length: ${
+        currentContent?.length || 0
+      }, Edit mode: ${isEditMode}, Type: ${typeof currentContent}`
     );
+
+    if (activeResumeTab === "optimized") {
+      console.log("optimizedResume state:", {
+        length: optimizedResume?.length || 0,
+        type: typeof optimizedResume,
+        isEmpty: !optimizedResume,
+        firstFewChars: optimizedResume?.substring(0, 30) || "N/A",
+      });
+
+      // Check localStorage for optimized resume
+      const storedOptimizedResume = localStorage.getItem("optimizedResume");
+      console.log("localStorage optimizedResume:", {
+        length: storedOptimizedResume?.length || 0,
+        firstFewChars: storedOptimizedResume?.substring(0, 30) || "N/A",
+      });
+    }
 
     // Display loading state when optimizing
     if (activeResumeTab === "optimized" && isOptimizing) {
@@ -1126,24 +1318,6 @@ Certifications:
           </p>
         </div>
 
-        {/* Debug section - useful for development */}
-        {process.env.NODE_ENV !== "production" && (
-          <div className="mb-4 p-2 bg-gray-100 text-xs font-mono rounded">
-            <div>
-              <strong>Content Source:</strong> {contentSource}
-            </div>
-            <div>
-              <strong>Resume Length:</strong> {resume?.length || 0}
-            </div>
-            <div>
-              <strong>Active Tab:</strong> {activeResumeTab}
-            </div>
-            <div>
-              <strong>Edit Mode:</strong> {isEditMode ? "Yes" : "No"}
-            </div>
-          </div>
-        )}
-
         {error && (
           <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md max-w-3xl mx-auto">
             <div className="flex">
@@ -1199,44 +1373,15 @@ Certifications:
                 </div>
 
                 <div className="mt-8 flex justify-center">
-                  {!optimizedResume ? (
-                    <Button
-                      onClick={handleOptimizeResume}
-                      isLoading={isOptimizing}
-                      size="lg"
-                      className="font-bold shadow-md"
-                      leftIcon={
-                        <svg
-                          className="h-5 w-5"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                          />
-                        </svg>
-                      }
-                    >
-                      {isOptimizing
-                        ? "Generating..."
-                        : "Generate Optimized Resume"}
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleGetNewScore}
-                      isLoading={isOptimizing}
-                      size="lg"
-                      className="font-bold shadow-md"
-                      variant="primary"
-                    >
-                      {isOptimizing ? "Analyzing..." : "Get New Score"}
-                    </Button>
-                  )}
+                  <Button
+                    onClick={handleGetNewScore}
+                    isLoading={isOptimizing}
+                    size="lg"
+                    className="font-bold shadow-md"
+                    variant="primary"
+                  >
+                    {isOptimizing ? "Analyzing..." : "Get New Score"}
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -1411,18 +1556,7 @@ Certifications:
               <div className="mb-4">
                 <nav className="flex space-x-2">
                   <button
-                    onClick={() => {
-                      if (isEditMode) {
-                        saveChanges();
-                      }
-                      console.log("Switching to original resume tab");
-                      setActiveResumeTab("original");
-
-                      // Update editable content if in edit mode
-                      if (isEditMode) {
-                        setEditableContent(resume);
-                      }
-                    }}
+                    onClick={() => handleTabSwitch("original")}
                     className={`px-4 py-2 rounded-lg transition font-medium text-sm cursor-pointer ${
                       activeResumeTab === "original"
                         ? "bg-primary-600 text-white shadow-sm"
@@ -1433,27 +1567,11 @@ Certifications:
                   </button>
 
                   <button
-                    onClick={() => {
-                      if (isEditMode) {
-                        saveChanges();
-                      }
-                      console.log("Switching to optimized resume tab");
-                      setActiveResumeTab("optimized");
-
-                      // Update editable content if in edit mode
-                      if (isEditMode && optimizedResume) {
-                        setEditableContent(optimizedResume);
-                      }
-                    }}
-                    disabled={!optimizedResume && isOptimizing === false}
+                    onClick={() => handleTabSwitch("optimized")}
                     className={`px-4 py-2 rounded-lg transition font-medium text-sm cursor-pointer ${
                       activeResumeTab === "optimized"
                         ? "bg-primary-600 text-white shadow-sm"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    } ${
-                      !optimizedResume && isOptimizing === false
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
                     }`}
                   >
                     Optimized Resume
