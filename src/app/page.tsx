@@ -28,24 +28,31 @@ export default function Home() {
       setError("Please enter a job description");
       return;
     }
+
+    if (!resumeFile) {
+      setError("Please upload a resume file (PDF or Word document)");
+      return;
+    }
+
     setError(null);
     setIsAnalyzing(true);
     try {
       const formData = new FormData();
       formData.append("jobDescription", jobDescription);
-      if (resumeFile) {
-        formData.append("resumeFile", resumeFile);
-      } else if (resume.trim()) {
-        formData.append("resume", resume);
-      }
+      formData.append("resumeFile", resumeFile);
       formData.append("skills", skills);
+
+      // Make the API request for analysis
+      console.log("Sending resume for analysis...");
       const response = await fetch("/api/analyze-resume", {
         method: "POST",
         body: formData,
       });
+
       if (!response.ok) {
         throw new Error("Failed to analyze resume");
       }
+
       const result = await response.json();
 
       // Store the result in localStorage
@@ -53,32 +60,59 @@ export default function Home() {
       localStorage.setItem("jobDescription", jobDescription);
       localStorage.setItem("skills", skills);
 
-      // Always store resume data - either from text or file
-      if (resume.trim()) {
-        console.log(
-          "Storing resume text in localStorage, length:",
-          resume.length
+      // Store resume file name
+      console.log("Resume file provided, storing file name:", resumeFile.name);
+      localStorage.setItem("resumeFileName", resumeFile.name);
+
+      // Read the file content as text for original PDF storage
+      try {
+        // Store metadata about the file
+        const fileMetadata = {
+          name: resumeFile.name,
+          type: resumeFile.type,
+          size: resumeFile.size,
+          lastModified: resumeFile.lastModified,
+        };
+        localStorage.setItem(
+          "resumeFileMetadata",
+          JSON.stringify(fileMetadata)
         );
-        localStorage.setItem("resume", resume);
-      } else if (resumeFile) {
-        console.log(
-          "Resume file provided, storing file name:",
-          resumeFile.name
-        );
-        localStorage.setItem("resumeFileName", resumeFile.name);
-        // We need to read the file content as text and store it
-        try {
+
+        // If it's a PDF file, store it differently to preserve binary data
+        if (resumeFile.type === "application/pdf") {
+          // We'll get the extracted text from the API response
+          // This assumes the API response includes the extracted text
+          if (result.extractedText) {
+            console.log(
+              `Storing extracted PDF text from API response (${result.extractedText.length} chars)`
+            );
+            localStorage.setItem("extractedResumeText", result.extractedText);
+            localStorage.setItem("resume", result.extractedText);
+
+            // Log the first 100 characters to help with debugging
+            console.log(
+              "Text preview:",
+              result.extractedText.substring(0, 100) + "..."
+            );
+          } else {
+            // If no extracted text in response, we need to extract it client-side
+            console.log(
+              "No extracted text in API response, using file text as fallback"
+            );
+            const fileText = await resumeFile.text();
+            localStorage.setItem("resume", fileText);
+          }
+        } else {
+          // For non-PDF files, store as text
           const fileText = await resumeFile.text();
           console.log(
             "Storing resume file content in localStorage, length:",
             fileText.length
           );
           localStorage.setItem("resume", fileText);
-        } catch (err) {
-          console.error("Error reading resume file:", err);
         }
-      } else {
-        console.log("No resume data to store in localStorage");
+      } catch (err) {
+        console.error("Error reading resume file:", err);
       }
 
       // Navigate to results page
@@ -147,9 +181,10 @@ export default function Home() {
 
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                   <p className="text-sm text-blue-800">
-                    <span className="font-semibold">Pro tip:</span> Upload both
-                    your resume and the job description to get the most accurate
-                    matching and optimization suggestions.
+                    <span className="font-semibold">Pro tip:</span> Upload your
+                    resume as a PDF or Word document along with the job
+                    description to get the most accurate matching and
+                    optimization suggestions.
                   </p>
                 </div>
               </div>
