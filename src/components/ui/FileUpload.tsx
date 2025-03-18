@@ -16,9 +16,9 @@ export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
   (
     {
       label,
-      accept = ".pdf,.doc,.docx,.txt",
+      accept = ".pdf,.doc,.docx",
       error,
-      helperText = "PDF, DOC, DOCX or TXT files up to 5MB",
+      helperText = "PDF or Word documents up to 5MB",
       fullWidth = true,
       onFileChange,
       className,
