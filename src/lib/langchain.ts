@@ -121,7 +121,7 @@ The optimized resume should be in a clean, ATS-friendly format.
 Do not use tables, columns, images, or other formatting that could confuse ATS systems.
 Use bullet points for better readability.
 
-Your optimized resume output should be properly formatted and ready for the user to copy and use immediately. Please do not give any other text other than the resume text
+Your optimized resume output should be properly formatted and ready for the user to copy and use immediately. Please do not give any other text other than the resume text, not even text like "here is your resume" or anything like that.
 `;
 
   return PromptTemplate.fromTemplate(templateInstructions);
